@@ -20,13 +20,14 @@ contract GenericSwapFacet is ILiFi, Swapper {
      * @param _swapData an array of swap related data for performing swaps before bridging
      */
     function swapTokensGeneric(LiFiData memory _lifiData, LibSwap.SwapData[] calldata _swapData) public payable {
+        // 目标资产余额
         uint256 receivingAssetIdBalance = LibAsset.getOwnBalance(_lifiData.receivingAssetId);
 
         // Swap
         _executeSwaps(_lifiData, _swapData);
-
+        // 多出来的目标资产余额
         uint256 postSwapBalance = LibAsset.getOwnBalance(_lifiData.receivingAssetId) - receivingAssetIdBalance;
-
+        // 多出来的资产还给用户
         LibAsset.transferAsset(_lifiData.receivingAssetId, payable(msg.sender), postSwapBalance);
 
         emit LiFiTransferStarted(

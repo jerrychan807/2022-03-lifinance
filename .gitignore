@@ -17,3 +17,10 @@ yalc.lock
 
 contractsInfo.json
 deployments/
+
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr

@@ -40,7 +40,7 @@ contract AnyswapFacet is ILiFi, Swapper {
             }
 
             uint256 _fromTokenBalance = LibAsset.getOwnBalance(underlyingToken);
-            LibAsset.transferFromERC20(underlyingToken, msg.sender, address(this), _anyswapData.amount);
+            LibAsset.transferFromERC20(underlyingToken, msg.sender, address(this), _anyswapData.amount); // 从用户处取款
 
             require(
                 LibAsset.getOwnBalance(underlyingToken) - _fromTokenBalance == _anyswapData.amount,
@@ -76,8 +76,9 @@ contract AnyswapFacet is ILiFi, Swapper {
         LibSwap.SwapData[] calldata _swapData,
         AnyswapData memory _anyswapData
     ) public payable {
+        // 先执行交换
         address underlyingToken = IAnyswapToken(_anyswapData.token).underlying();
-        if (_anyswapData.token != address(0) && underlyingToken != IAnyswapRouter(_anyswapData.router).wNATIVE()) {
+        if (_anyswapData.token != address(0) && underlyingToken != IAnyswapRouter(_anyswapData.router).wNATIVE()) { // 非原生资产
             if (underlyingToken == address(0)) {
                 underlyingToken = _anyswapData.token;
             }
@@ -93,6 +94,7 @@ contract AnyswapFacet is ILiFi, Swapper {
 
             _anyswapData.amount = _postSwapBalance;
         } else {
+            // 原生资产
             uint256 _fromBalance = address(this).balance;
 
             // Swap
@@ -106,7 +108,7 @@ contract AnyswapFacet is ILiFi, Swapper {
 
             _anyswapData.amount = _postSwapBalance;
         }
-
+        // 开始跨链
         _startBridge(_anyswapData);
 
         emit LiFiTransferStarted(
@@ -134,6 +136,7 @@ contract AnyswapFacet is ILiFi, Swapper {
         address underlyingToken = IAnyswapToken(_anyswapData.token).underlying();
 
         if (underlyingToken == IAnyswapRouter(_anyswapData.router).wNATIVE()) {
+            // 调用anyswap进行跨链,原生资产
             IAnyswapRouter(_anyswapData.router).anySwapOutNative{ value: _anyswapData.amount }(
                 _anyswapData.token,
                 _anyswapData.recipient,
@@ -147,7 +150,7 @@ contract AnyswapFacet is ILiFi, Swapper {
             if (underlyingToken != address(0)) {
                 // Give Anyswap approval to bridge tokens
                 LibAsset.approveERC20(IERC20(underlyingToken), _anyswapData.router, _anyswapData.amount);
-
+                // 调用anyswap进行跨链,非原生资产
                 IAnyswapRouter(_anyswapData.router).anySwapOutUnderlying(
                     _anyswapData.token,
                     _anyswapData.recipient,

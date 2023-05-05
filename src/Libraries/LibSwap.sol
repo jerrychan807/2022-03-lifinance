@@ -27,18 +27,21 @@ library LibSwap {
     );
 
     function swap(bytes32 transactionId, SwapData calldata _swapData) internal {
-        uint256 fromAmount = _swapData.fromAmount;
+        uint256 fromAmount = _swapData.fromAmount; // 记录
         uint256 toAmount = LibAsset.getOwnBalance(_swapData.receivingAssetId);
         address fromAssetId = _swapData.sendingAssetId;
         if (!LibAsset.isNativeAsset(fromAssetId) && LibAsset.getOwnBalance(fromAssetId) < fromAmount) {
             LibAsset.transferFromERC20(fromAssetId, msg.sender, address(this), fromAmount);
+            // 从用户处取钱
         }
 
         if (!LibAsset.isNativeAsset(fromAssetId)) {
             LibAsset.approveERC20(IERC20(fromAssetId), _swapData.approveTo, fromAmount);
+            // 授权
         }
 
         // solhint-disable-next-line avoid-low-level-calls
+        // 执行交换
         (bool success, bytes memory res) = _swapData.callTo.call{ value: msg.value }(_swapData.callData);
         if (!success) {
             string memory reason = LibUtil.getRevertMsg(res);
